@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagram Gujarati Translator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600&display=swap">
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1d1d1b;--mu:#6b6a63;--bd:#dcdad2;--ac:#0f6e56;--ac2:#e1f5ee}
+@media (prefers-color-scheme:dark){:root{--bg:#171716;--card:#232321;--tx:#ecebe4;--mu:#a09f96;--bd:#3a3a36;--ac:#5dcaa5;--ac2:#12332b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:900px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:0 0 8px}
+p.s{color:var(--mu);margin:0 0 16px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+input[type=text],input[type=number]{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:7px;font:inherit;width:100%}
+input[type=color]{width:34px;height:34px;padding:0;border:1px solid var(--bd);border-radius:6px;background:none}
+button{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
+button.g{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.cw{overflow:auto;border:1px solid var(--bd);border-radius:8px;background:#fff;max-height:70vh}
+canvas{display:block;max-width:100%;touch-action:none;cursor:crosshair}
+.st{color:var(--mu);font-size:13px;min-height:18px;margin-top:6px}
+.reg{display:grid;grid-template-columns:24px 1fr 1fr 64px 34px 34px 34px;gap:6px;align-items:center;margin-bottom:6px}
+.gu{font-family:"Noto Sans Gujarati",system-ui,sans-serif}
+.res img{max-width:100%;border:1px solid var(--bd);border-radius:8px;background:#fff}
+.hide{display:none}
+@media(max-width:640px){.reg{grid-template-columns:20px 1fr 1fr 34px 34px 34px}.reg .sz{display:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Diagram Gujarati Translator</h1>
+<p class="s">Scientific diagram ke English labels ko Gujarati se badlo. Diagram, formulas aur structure bilkul waise hi rehte hain, sirf aapke chune hue text ke upar Gujarati text aata hai.</p>
+
+<section>
+<h2>1. Image daalo</h2>
+<div class="row" style="margin-top:0">
+<input type="file" id="file" accept="image/*">
+<button class="g" id="pasteImg">Clipboard se paste karo</button>
+</div>
+<div class="st" id="st1">Screenshot copy karke is page par Ctrl+V (Mac par Cmd+V) dabaiye, ya upar ka button use kijiye. File upload bhi chalega. Jitni badi image, utna achha result.</div>
+</section>
+
+<section id="s2" class="hide">
+<h2>2. English text ke upar box banao</h2>
+<div class="st" style="margin:0 0 8px">Image par drag karke har English word ya line ke upar alag box banao. Jo text alag line mein hai, uska alag box banao. Formula, number aur symbol ke upar box mat banao.</div>
+<div class="cw"><canvas id="cv"></canvas></div>
+<div class="row"><button class="g" id="undo">Aakhri box hatao</button><button class="g" id="clear">Sab box hatao</button></div>
+</section>
+
+<section id="s3" class="hide">
+<h2>3. Gujarati likho</h2>
+<div class="st" style="margin:0 0 8px">English text daalo to common scientific words ka Gujarati apne aap bhar jata hai. Baaki Gujarati khud type ya paste karo.</div>
+<div id="list"></div>
+<div class="row"><button class="g" id="auto">Chrome translator se bharo</button><span class="st" id="st3"></span></div>
+</section>
+
+<section id="s4" class="hide res">
+<h2>4. Result</h2>
+<div class="row" style="margin-top:0"><button id="make">Result banao</button><button class="g" id="dlb">Download PNG</button><button class="g" id="copy">Image copy karo</button></div>
+<div class="st">Result par right-click ya long-press karke bhi Save image kar sakte ho.</div>
+<div id="out" style="margin-top:8px"></div>
+</section>
+</main>
+
+<script>
+(function(){
+var G={"major":"મુખ્ય","minor":"ગૌણ","aqueous":"જલીય","solution":"વિલયન","yellowish white ppt":"પીળાશ પડતો સફેદ અવક્ષેપ","fixed":"જડિત","smooth":"લીસી","rough surface":"ખરબચડી સપાટી","precipitate":"અવક્ષેપ","ppt":"અવક્ષેપ","white ppt":"સફેદ અવક્ષેપ","heat":"ઉષ્મા","light":"પ્રકાશ","water":"પાણી","catalyst":"ઉદ્દીપક","reactant":"પ્રક્રિયક","reactants":"પ્રક્રિયકો","product":"નીપજ","products":"નીપજો","acid":"ઍસિડ","base":"બેઇઝ","salt":"ક્ષાર","alcohol":"આલ્કોહોલ","excess":"વધુ પડતું","dilute":"મંદ","concentrated":"સાંદ્ર","room temperature":"ઓરડાનું તાપમાન","temperature":"તાપમાન","pressure":"દબાણ","gas":"વાયુ","liquid":"પ્રવાહી","solid":"ઘન","heating":"ગરમ કરવું","cooling":"ઠંડું કરવું","stable":"સ્થાયી","unstable":"અસ્થાયી","slow":"ધીમી","fast":"ઝડપી","reagent":"પ્રક્રિયક","yield":"ઉત્પાદન","mixture":"મિશ્રણ","filtrate":"ગાળણ","residue":"અવશેષ","colourless":"રંગવિહીન","colorless":"રંગવિહીન","blue":"વાદળી","red":"લાલ","green":"લીલો","yellow":"પીળો","white":"સફેદ","black":"કાળો","brown":"ભૂરો","orange":"નારંગી","pink":"ગુલાબી","excess of":"વધુ પડતું","in presence of":"ની હાજરીમાં","presence of":"ની હાજરી"};
+var $=function(i){return document.getElementById(i)};
+var cv=$("cv"),ctx=cv.getContext("2d"),oc=document.createElement("canvas"),octx=oc.getContext("2d",{willReadFrequently:true});
+var regs=[],drag=null,loaded=false;
+var dl=document.createElement("datalist");dl.id="gl";Object.keys(G).forEach(function(k){var o=document.createElement("option");o.value=k;dl.appendChild(o)});document.body.appendChild(dl);
+
+function loadBlob(f){
+  var im=new Image();
+  im.onload=function(){
+    oc.width=cv.width=im.naturalWidth;oc.height=cv.height=im.naturalHeight;
+    octx.drawImage(im,0,0);regs=[];loaded=true;
+    ["s2","s3","s4"].forEach(function(i){$(i).className=""});
+    $("out").innerHTML="";draw(true);list();
+    $("st1").textContent="Image load ho gayi.";
+    $("s2").scrollIntoView({behavior:"smooth"});
+  };
+  im.onerror=function(){$("st1").textContent="Ye image padhi nahi ja saki."};
+  im.src=URL.createObjectURL(f);
+}
+$("file").onchange=function(e){var f=e.target.files[0];if(f)loadBlob(f)};
+document.addEventListener("paste",function(e){
+  var items=(e.clipboardData&&e.clipboardData.items)||[];
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.indexOf("image")===0){
+      var f=items[i].getAsFile();
+      if(f){e.preventDefault();loadBlob(f);return}
+    }
+  }
+});
+$("pasteImg").onclick=async function(){
+  var s=$("st1");
+  try{
+    var cl=await navigator.clipboard.read();
+    for(var i=0;i<cl.length;i++){
+      var t=cl[i].types.filter(function(x){return x.indexOf("image/")===0})[0];
+      if(t){loadBlob(await cl[i].getType(t));return}
+    }
+    s.textContent="Clipboard mein koi image nahi mili. Pehle screenshot copy kijiye.";
+  }catch(err){
+    s.textContent="Button se paste nahi hua. Page par click karke Ctrl+V (Mac par Cmd+V) dabaiye.";
+  }
+};
+function pos(e){var r=cv.getBoundingClientRect(),s=cv.width/r.width;return{x:(e.clientX-r.left)*s,y:(e.clientY-r.top)*s}}
+cv.onpointerdown=function(e){if(!loaded)return;cv.setPointerCapture(e.pointerId);var p=pos(e);drag={x:p.x,y:p.y,w:0,h:0}};
+cv.onpointermove=function(e){if(!drag)return;var p=pos(e);drag.w=p.x-drag.x;drag.h=p.y-drag.y;draw(true)};
+cv.onpointerup=function(e){
+  if(!drag)return;var d=drag;drag=null;
+  var x=Math.max(0,Math.round(Math.min(d.x,d.x+d.w))),y=Math.max(0,Math.round(Math.min(d.y,d.y+d.h)));
+  var w=Math.min(cv.width-x,Math.round(Math.abs(d.w))),h=Math.min(cv.height-y,Math.round(Math.abs(d.h)));
+  if(w>5&&h>5){var r={x:x,y:y,w:w,h:h,en:"",gu:"",fs:0};sample(r);regs.push(r);list()}
+  draw(true);
+};
+function hex(c){return"#"+c.map(function(v){return("0"+Math.round(v).toString(16)).slice(-2)}).join("")}
+function sample(r){
+  var d=octx.getImageData(r.x,r.y,r.w,r.h).data,cnt={},W=r.w,H=r.h,best=null;
+  for(var yy=0;yy<H;yy++)for(var xx=0;xx<W;xx++){
+    if(yy>2&&yy<H-3&&xx>2&&xx<W-3)continue;
+    var i=(yy*W+xx)*4,k=(d[i]>>4)+","+(d[i+1]>>4)+","+(d[i+2]>>4);
+    var o=cnt[k]||(cnt[k]={n:0,s:[0,0,0]});o.n++;o.s[0]+=d[i];o.s[1]+=d[i+1];o.s[2]+=d[i+2];
+    if(!best||o.n>best.n)best=o;
+  }
+  var bg=best.s.map(function(v){return v/best.n}),far=0,fg=[0,0,0];
+  for(var j=0;j<d.length;j+=4){var dist=Math.abs(d[j]-bg[0])+Math.abs(d[j+1]-bg[1])+Math.abs(d[j+2]-bg[2]);if(dist>far){far=dist;fg=[d[j],d[j+1],d[j+2]]}}
+  if(far<120){var lum=bg[0]*.3+bg[1]*.59+bg[2]*.11;fg=lum>128?[0,0,0]:[255,255,255]}
+  r.bg=hex(bg);r.fg=hex(fg);
+}
+function fit(r){
+  var s=r.fs>0?r.fs:Math.round(r.h*.85);
+  ctx.font="400 "+s+"px 'Noto Sans Gujarati',sans-serif";
+  if(!(r.fs>0))while(s>6&&ctx.measureText(r.gu).width>r.w){s--;ctx.font="400 "+s+"px 'Noto Sans Gujarati',sans-serif"}
+}
+function draw(outline){
+  ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(oc,0,0);
+  regs.forEach(function(r){
+    if(!r.gu.trim()){return}
+    ctx.fillStyle=r.bg;ctx.fillRect(r.x-1,r.y-1,r.w+2,r.h+2);
+    fit(r);ctx.fillStyle=r.fg;ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText(r.gu,r.x+r.w/2,r.y+r.h/2);
+  });
+  if(outline){
+    ctx.lineWidth=Math.max(1,cv.width/600);ctx.strokeStyle="#d62828";ctx.setLineDash([6,4]);
+    regs.forEach(function(r){ctx.strokeRect(r.x,r.y,r.w,r.h)});
+    if(drag){ctx.strokeStyle="#1d6fd6";ctx.strokeRect(drag.x,drag.y,drag.w,drag.h)}
+    ctx.setLineDash([]);
+  }
+}
+function list(){
+  var L=$("list");L.innerHTML="";
+  regs.forEach(function(r,i){
+    var row=document.createElement("div");row.className="reg";
+    var n=document.createElement("span");n.textContent=i+1;
+    var en=document.createElement("input");en.type="text";en.placeholder="English";en.value=r.en;en.setAttribute("list","gl");
+    var gu=document.createElement("input");gu.type="text";gu.placeholder="ગુજરાતી";gu.className="gu";gu.value=r.gu;
+    var sz=document.createElement("input");sz.type="number";sz.min=0;sz.placeholder="size";sz.title="Font size (0 = auto)";sz.className="sz";sz.value=r.fs||"";
+    var bg=document.createElement("input");bg.type="color";bg.value=r.bg;bg.title="Background rang";
+    var fg=document.createElement("input");fg.type="color";fg.value=r.fg;fg.title="Text rang";
+    var del=document.createElement("button");del.className="g";del.textContent="×";del.title="Hatao";
+    en.oninput=function(){r.en=en.value;var m=G[en.value.trim().toLowerCase()];if((m&&!r.gu.trim())||(m&&r.guAuto)){r.gu=m;r.guAuto=true;gu.value=m}draw(true)};
+    gu.oninput=function(){r.gu=gu.value;r.guAuto=false;draw(true)};
+    sz.oninput=function(){r.fs=+sz.value||0;draw(true)};
+    bg.oninput=function(){r.bg=bg.value;draw(true)};fg.oninput=function(){r.fg=fg.value;draw(true)};
+    del.onclick=function(){regs.splice(i,1);list();draw(true)};
+    [n,en,gu,sz,bg,fg,del].forEach(function(x){row.appendChild(x)});L.appendChild(row);
+  });
+}
+$("undo").onclick=function(){regs.pop();list();draw(true)};
+$("clear").onclick=function(){regs=[];list();draw(true)};
+$("auto").onclick=async function(){
+  var s=$("st3");
+  if(!("Translator" in self)){s.textContent="Is browser mein translator nahi hai. Chrome desktop try karo, ya Gujarati khud likho.";return}
+  try{
+    var av=await Translator.availability({sourceLanguage:"en",targetLanguage:"gu"});
+    if(av==="unavailable"){s.textContent="Chrome mein English to Gujarati abhi available nahi hai. Gujarati khud likho.";return}
+    var t=await Translator.create({sourceLanguage:"en",targetLanguage:"gu"});
+    for(var i=0;i<regs.length;i++){if(regs[i].en.trim()&&!regs[i].gu.trim()){regs[i].gu=await t.translate(regs[i].en)}}
+    list();draw(true);s.textContent="Ho gaya. Scientific terms zaroor check karo.";
+  }catch(e){s.textContent="Nahi ho paya: "+e.message}
+};
+function result(){draw(false);var u=cv.toDataURL("image/png");draw(true);return u}
+async function fontReady(){try{await document.fonts.load("16px 'Noto Sans Gujarati'","ગુજરાતી")}catch(e){}}
+$("make").onclick=async function(){
+  await fontReady();
+  var img=new Image();img.alt="Translated diagram";img.src=result();
+  $("out").innerHTML="";$("out").appendChild(img);
+};
+$("dlb").onclick=async function(){
+  await fontReady();
+  var a=document.createElement("a");a.href=result();a.download="gujarati-diagram.png";
+  document.body.appendChild(a);a.click();a.remove();
+};
+$("copy").onclick=function(){
+  draw(false);
+  cv.toBlob(function(b){
+    draw(true);
+    try{navigator.clipboard.write([new ClipboardItem({"image/png":b})]).then(function(){$("copy").textContent="Copy ho gaya"},function(){$("copy").textContent="Copy nahi hua, Download use karo"})}
+    catch(e){$("copy").textContent="Copy nahi hua, Download use karo"}
+  });
+};
+if(document.fonts&&document.fonts.load)document.fonts.load("16px 'Noto Sans Gujarati'","ગુજરાતી").then(function(){if(loaded)draw(true)});
+})();
+</script>
+</body>
+</html>
